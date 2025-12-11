@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sena's Minimal Photobooth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* --- CSS (style.css) --- */
+        
+        /* VARIABLES สำหรับสีพาสเทล */
+        :root {
+            --color-primary: #FFB3C6; /* ชมพูพาสเทล */
+            --color-secondary: #BEE3DB; /* ฟ้า/เขียวพาสเทลอ่อน */
+            --color-background: #F8F9FA; /* ครีมอ่อน/ขาว */
+            --color-text: #495057; /* สีเทาอบอุ่น */
+            --color-accent: #FFE5D9; /* พีช/ครีม */
+            --color-dark-text: #343a40;
+            --border-radius-lg: 15px;
+            --border-radius-sm: 8px;
+        }
+
+        /* BASE STYLES & FONT */
+        body {
+            font-family: 'Prompt', sans-serif; /* ฟอนต์น่ารัก อ่านง่าย */
+            background-color: var(--color-background);
+            color: var(--color-text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px; /* จำกัดความกว้างให้ดูน่ารักและรองรับมือถือ */
+            padding: 20px;
+            background-color: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* เงาบางๆ ให้ดูคลีน */
+        }
+
+        /* HEADER STYLES */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--color-dark-text);
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: var(--color-primary);
+            font-size: 0.9em;
+        }
+
+        /* CAMERA AREA */
+        .camera-area {
+            position: relative;
+            width: 100%;
+            /* อัตราส่วน 3:4 (Photobooth Style) */
+            padding-top: 133.33%; 
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            background-color: var(--color-accent);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #webcam-preview, #photo-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* กลับด้านภาพให้เหมือนกระจก */
+        }
+
+        .loading-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-dark-text);
+            font-size: 1.2em;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        /* BUTTONS (Cute & Rounded) */
+        .cute-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px; /* โค้งมนมาก */
+            font-family: 'Prompt', sans-serif;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 5px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .primary-btn {
+            background-color: var(--color-primary);
+            color: #FFFFFF;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+            background-color: #e09ba7;
+        }
+
+        .secondary-btn {
+            background-color: var(--color-accent);
+            color: var(--color-dark-text);
+        }
+
+        .secondary-btn:hover:not(:disabled) {
+            background-color: #f7dacd;
+        }
+
+        .cute-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        /* FRAME SELECTION */
+        .frame-selection {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: var(--color-accent);
+            border-radius: var(--border-radius-lg);
+        }
+
+        .frame-options {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .frame-select-btn {
+            padding: 8px 15px;
+            margin: 4px;
+            border: 2px solid transparent;
+            background-color: #FFFFFF;
+            color: var(--color-text);
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .frame-select-btn.active {
+            border-color: var(--color-primary);
+            background-color: var(--color-primary);
+            color: #FFFFFF;
+            box-shadow: 0 0 0 3px var(--color-accent);
+        }
+
+        /* FRAME OVERLAYS */
+        .frame-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* เพื่อให้คลิกผ่านไปยัง video ได้ */
+        }
+
+        /* Frame Styles (Minimal Cute Frames) */
+
+        /* Frame 1: หัวใจพาสเทล */
+        .frame-overlay[data-frame="frame1"] {
+            border: 15px solid var(--color-primary);
+            box-sizing: border-box;
+            /* Corner Hearts */
+            background: 
+                radial-gradient(circle at 10% 10%, var(--color-accent) 5px, transparent 5px) 0% 0%,
+                radial-gradient(circle at 90% 10%, var(--color-accent) 5px, transparent 5px) 100% 0%,
+                radial-gradient(circle at 10% 90%, var(--color-accent) 5px, transparent 5px) 0% 100%,
+                radial-gradient(circle at 90% 90%, var(--color-accent) 5px, transparent 5px) 100% 100%;
+            background-repeat: no-repeat;
+            background-size: 50% 50%;
+        }
+
+        /* Frame 2: ดอกไม้ */
+        .frame-overlay[data-frame="frame2"] {
+            border: 20px solid #FFF;
+            outline: 2px solid var(--color-secondary);
+            box-sizing: border-box;
+            /* Simple Flower Border */
+            background: 
+                radial-gradient(circle at 50% 50%, var(--color-secondary) 15px, transparent 15px);
+            background-repeat: repeat;
+            background-size: 50px 50px;
+            opacity: 0.8;
+        }
+
+        /* Frame 3: โพลารอยด์ */
+        .frame-overlay[data-frame="frame3"] {
+            /* จำลองกรอบหนาด้านล่าง */
+            border: 10px solid #FFFFFF;
+            border-bottom: 70px solid #FFFFFF;
+            box-sizing: border-box;
+            outline: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .frame-text {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2em;
+            font-weight: 500;
+            color: var(--color-dark-text);
+            z-index: 10;
+            background-color: #FFFFFF;
+            padding: 2px 8px;
+            border-radius: var(--border-radius-sm);
+        }
+        .frame-overlay[data-frame="frame3"] .frame-text {
+            bottom: -55px;
+        }
+
+
+        /* GALLERY STYLES */
+        .gallery h3 {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 คอลัมน์ */
+            gap: 10px;
+            padding: 10px;
+            min-height: 100px;
+            border: 1px dashed var(--color-accent);
+            border-radius: var(--border-radius-lg);
+            margin-bottom: 20px;
+        }
+
+        .gallery-item {
+            position: relative;
+            padding-top: 133.33%; /* 3:4 aspect ratio */
+            background-color: var(--color-accent);
+            border-radius: var(--border-radius-sm);
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .gallery-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        /* PRINT STYLES (4x6 Layout) */
+        @media print {
+            /* ซ่อนทุกอย่างยกเว้น layout สำหรับพิมพ์ */
+            body > *:not(#print-layout) {
+                display: none !important;
+            }
+
+            body {
+                /* รีเซ็ต Margin/Padding สำหรับพิมพ์ */
+                margin: 0;
+                padding: 0;
+                background: none;
+            }
+
+            #print-layout {
+                display: block !important;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+            }
+
+            .print-page-4x6 {
+                /* ขนาด 4x6 นิ้ว (จัดเรียง 6 รูป) */
+                width: 6in;
+                height: 4in;
+                margin: auto; /* จัดกึ่งกลาง */
+                display: grid;
+                grid-template-columns: repeat(3, 1fr); /* 3 คอลัมน์ */
+                grid-template-rows: repeat(2, 1fr); /* 2 แถว */
+                gap: 0;
+                box-sizing: border-box;
+                overflow: hidden;
+                page-break-after: always;
+                
+                /* การจัดพิมพ์แนวนอน (Landscape) */
+                /* บางเบราว์เซอร์ต้องการการตั้งค่า Print Preferences ด้วย */
+                transform: rotate(90deg);
+                transform-origin: top left;
+                width: 4in; 
+                height: 6in;
+                position: absolute;
+                top: 0;
+                left: 6in; /* เลื่อนตำแหน่งให้ถูกหลักการหมุน */
+            }
+
+            .print-item-4x6 {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+
+        /* ซ่อน Print Layout ในหน้าจอปกติ */
+        #print-layout {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Sena's Minimal Booth 🌸</h1>
+            <p>Your Cute & Clean Photo Experience</p>
+        </header>
+
+        <div class="camera-area">
+            <video id="webcam-preview" autoplay playsinline></video>
+            <canvas id="photo-canvas" style="display:none;"></canvas>
+            
+            <div id="frame-overlay" class="frame-overlay"></div>
+            
+            <div id="loading-message" class="loading-message">
+                แตะเพื่อเริ่มกล้อง 📷
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="capture-btn" class="cute-btn primary-btn" disabled>
+                <i class="fas fa-camera"></i> ถ่ายรูป
+            </button>
+
+            <button id="toggle-camera-btn" class="cute-btn secondary-btn" style="display:none;">
+                <i class="fas fa-sync-alt"></i> สลับกล้อง
+            </button>
+        </div>
+
+        <div class="frame-selection">
+            <h3>✨ เลือกกรอบน่ารัก</h3>
+            <div class="frame-options">
+                <button class="frame-select-btn active" data-frame="none">
+                    <i class="fas fa-times"></i> ไม่มีกรอบ
+                </button>
+                <button class="frame-select-btn" data-frame="frame1">
+                    <i class="fas fa-heart"></i> หัวใจพาสเทล
+                </button>
+                <button class="frame-select-btn" data-frame="frame2">
+                    <i class="fas fa-star"></i> ดอกไม้
+                </button>
+                <button class="frame-select-btn" data-frame="frame3">
+                    <i class="fas fa-gem"></i> โพลารอยด์
+                </button>
+            </div>
+        </div>
+
+        <div class="gallery">
+            <h3>🖼️ รูปภาพที่ถ่ายได้ (สูงสุด 6 รูป)</h3>
+            <div id="photo-gallery" class="photo-gallery">
+                </div>
+            
+            <div class="action-buttons">
+                <button id="save-all-btn" class="cute-btn primary-btn" disabled>
+                    <i class="fas fa-download"></i> บันทึกรูปทั้งหมด
+                </button>
+                <button id="print-btn" class="cute-btn secondary-btn" disabled>
+                    <i class="fas fa-print"></i> พิมพ์ (4x6)
+                </button>
+                <button id="clear-gallery-btn" class="cute-btn secondary-btn">
+                    <i class="fas fa-trash-alt"></i> ล้างรูป
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-layout" class="print-layout">
+        <div class="print-page-4x6">
+            </div>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT (app.js) ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('webcam-preview');
+            const canvas = document.getElementById('photo-canvas');
+            const captureBtn = document.getElementById('capture-btn');
+            const toggleCameraBtn = document.getElementById('toggle-camera-btn');
+            const loadingMessage = document.getElementById('loading-message');
+            const frameOptions = document.querySelectorAll('.frame-select-btn');
+            const frameOverlay = document.getElementById('frame-overlay');
+            const photoGallery = document.getElementById('photo-gallery');
+            const saveAllBtn = document.getElementById('save-all-btn');
+            const printBtn = document.getElementById('print-btn');
+            const clearGalleryBtn = document.getElementById('clear-gallery-btn');
+            const galleryItems = []; // เก็บ Data URL ของรูปที่ถ่ายได้
+            let currentFrame = 'none';
+            let stream = null;
+            let cameraFacingMode = 'user'; // 'user' (กล้องหน้า) หรือ 'environment' (กล้องหลัง)
+
+            // --- 1. การจัดการกล้อง ---
+
+            // เปิดกล้อง
+            async function startCamera(facingMode) {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+
+                try {
+                    loadingMessage.textContent = 'กำลังโหลดกล้อง... ⏳';
+                    
+                    const constraints = {
+                        video: {
+                            facingMode: facingMode,
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        }
+                    };
+
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    video.srcObject = stream;
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        captureBtn.disabled = false;
+                        loadingMessage.style.display = 'none';
+                        
+                        // ตรวจสอบว่ามีกล้องหน้า/หลังหรือไม่ เพื่อแสดงปุ่มสลับ
+                        if (navigator.mediaDevices.enumerateDevices) {
+                            navigator.mediaDevices.enumerateDevices().then(devices => {
+                                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                                if (videoDevices.length > 1) {
+                                    toggleCameraBtn.style.display = 'inline-block';
+                                } else {
+                                    toggleCameraBtn.style.display = 'none';
+                                }
+                            });
+                        }
+                    };
+                    
+                } catch (err) {
+                    console.error("Error accessing the camera: ", err);
+                    loadingMessage.textContent = 'ไม่สามารถเข้าถึงกล้องได้ ❌ โปรดตรวจสอบสิทธิ์การใช้งาน';
+                    captureBtn.disabled = true;
+                }
+            }
+
+            // สลับกล้อง (สำหรับมือถือ)
+            toggleCameraBtn.addEventListener('click', () => {
+                cameraFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+                startCamera(cameraFacingMode);
+            });
+
+            // เริ่มต้นเมื่อผู้ใช้แตะที่หน้าจอ (เพื่อหลีกเลี่ยงข้อจำกัด autoplay ของเบราว์เซอร์)
+            loadingMessage.addEventListener('click', () => {
+                startCamera(cameraFacingMode);
+            });
+
+
+            // --- 2. การจัดการการถ่ายภาพและกรอบรูป ---
+
+            // ฟังก์ชันวาดรูปและกรอบลงบน Canvas
+            function drawImageWithFrame() {
+                if (video.readyState !== 4) return; // ตรวจสอบว่าวิดีโอพร้อม
+
+                const width = video.videoWidth;
+                const height = video.videoHeight;
+                
+                // กำหนดขนาด Canvas ให้ตรงกับวิดีโอ
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                // 1. วาดภาพจากกล้อง (พร้อมกลับด้าน)
+                ctx.save();
+                ctx.scale(-1, 1); // กลับด้านแนวนอน
+                ctx.drawImage(video, 0, 0, -width, height);
+                ctx.restore();
+
+                // 2. วาดกรอบรูป (หากมี)
+                const frameData = getFrameProperties(currentFrame, width, height);
+
+                // วาดกรอบรูป (สี/รูปร่าง)
+                if (frameData.borderSize > 0) {
+                    ctx.fillStyle = frameData.borderColor;
+                    // วาดกรอบด้านบน/ล่าง
+                    ctx.fillRect(0, 0, width, frameData.borderSize); 
+                    ctx.fillRect(0, height - frameData.borderSize, width, frameData.borderSize);
+                    // วาดกรอบด้านซ้าย/ขวา (ครอบคลุมเฉพาะส่วนที่เหลือ)
+                    ctx.fillRect(0, frameData.borderSize, frameData.borderSize, height - frameData.borderSize * 2);
+                    ctx.fillRect(width - frameData.borderSize, frameData.borderSize, frameData.borderSize, height - frameData.borderSize * 2);
+                }
+                
+                // 3. วาดข้อความ "sena125"
+                const text = "sena125";
+                ctx.font = `${Math.round(height * 0.05)}px 'Prompt', sans-serif`; 
+                ctx.fillStyle = '#495057';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                // ตำแหน่ง: กลางด้านล่างของภาพ 
+                ctx.fillText(text, width / 2, height - (frameData.textOffset || 15)); 
+
+                // ส่งรูปภาพที่ประมวลผลแล้วกลับไปเป็น Data URL
+                return canvas.toDataURL('image/jpeg', 0.9);
+            }
+
+            // ฟังก์ชันจัดการคุณสมบัติกรอบรูป
+            function getFrameProperties(frameId, width, height) {
+                let borderSize = 0;
+                let borderColor = 'transparent';
+                let textOffset = 15; // ระยะห่างจากขอบล่างของรูป
+
+                switch (frameId) {
+                    case 'frame1': // หัวใจพาสเทล
+                        borderSize = Math.round(width * 0.03); 
+                        borderColor = '#FFB3C6'; 
+                        break;
+                    case 'frame2': // ดอกไม้ (ใช้ CSS จัดการส่วนใหญ่)
+                        borderSize = Math.round(width * 0.03);
+                        borderColor = '#FFFFFF'; // กรอบขาว
+                        break;
+                    case 'frame3': // โพลารอยด์
+                        // กรอบโพลารอยด์มีกรอบล่างหนาพิเศษ
+                        borderSize = Math.round(width * 0.02);
+                        borderColor = '#FFFFFF';
+                        textOffset = Math.round(height * 0.1); // ขยับข้อความลงมาที่ส่วนล่างของกรอบโพลารอยด์
+                        break;
+                    case 'none':
+                    default:
+                        borderSize = 0;
+                        break;
+                }
+
+                return { borderSize, borderColor, textOffset };
+            }
+
+            // ปุ่มถ่ายรูป
+            captureBtn.addEventListener('click', () => {
+                const photoDataUrl = drawImageWithFrame();
+                if (photoDataUrl) {
+                    addPhotoToGallery(photoDataUrl);
+                }
+            });
+
+            // เลือกกรอบรูป
+            frameOptions.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    frameOptions.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFrame = btn.getAttribute('data-frame');
+                    frameOverlay.setAttribute('data-frame', currentFrame);
+                    
+                    // เพิ่ม/ลบข้อความ sena125 ลงใน overlay (ใช้สำหรับการแสดงตัวอย่างสด)
+                    let textElem = frameOverlay.querySelector('.frame-text');
+                    if (currentFrame !== 'none') {
+                        if (!textElem) {
+                            textElem = document.createElement('div');
+                            textElem.classList.add('frame-text');
+                            frameOverlay.appendChild(textElem);
+                        }
+                        textElem.textContent = 'sena125';
+                    } else {
+                        if (textElem) {
+                            frameOverlay.removeChild(textElem);
+                        }
+                    }
+                });
+            });
+
+
+            // --- 3. การจัดการคลังภาพ (Gallery) ---
+
+            // เพิ่มรูปที่ถ่ายได้ลงใน Gallery
+            function addPhotoToGallery(dataUrl) {
+                if (galleryItems.length >= 6) {
+                    alert('ถ่ายครบ 6 รูปแล้ว! โปรดล้างรูปเดิมเพื่อถ่ายใหม่ หรือพิมพ์/บันทึกรูปเหล่านี้');
+                    return;
+                }
+
+                galleryItems.push(dataUrl);
+                
+                const item = document.createElement('div');
+                item.classList.add('gallery-item');
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.alt = 'Captured Photo';
+                item.appendChild(img);
+                photoGallery.appendChild(item);
+
+                updateActionButtons();
+            }
+
+            // อัพเดทสถานะปุ่มบันทึก/พิมพ์
+            function updateActionButtons() {
+                const hasPhotos = galleryItems.length > 0;
+                saveAllBtn.disabled = !hasPhotos;
+                printBtn.disabled = !hasPhotos;
+            }
+
+            // ล้างรูปทั้งหมด
+            clearGalleryBtn.addEventListener('click', () => {
+                if (confirm('คุณต้องการล้างรูปภาพทั้งหมดที่ถ่ายไว้หรือไม่?')) {
+                    galleryItems.length = 0; // ล้าง Array
+                    photoGallery.innerHTML = ''; // ล้าง HTML
+                    updateActionButtons();
+                }
+            });
+
+            // บันทึกรูปทั้งหมด (ดาวน์โหลดทีละไฟล์)
+            saveAllBtn.addEventListener('click', () => {
+                if (galleryItems.length === 0) return;
+                
+                alert(`กำลังดาวน์โหลด ${galleryItems.length} รูปภาพ...`);
+                
+                galleryItems.forEach((dataUrl, index) => {
+                    const link = document.createElement('a');
+                    link.href = dataUrl;
+                    link.download = `sena_photobooth_${index + 1}_${Date.now()}.jpeg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            });
+
+
+            // --- 4. การจัดการการพิมพ์ (4x6) ---
+
+            printBtn.addEventListener('click', () => {
+                if (galleryItems.length === 0) {
+                    alert('โปรดถ่ายรูปก่อนทำการพิมพ์');
+                    return;
+                }
+                
+                // 1. เตรียม Layout สำหรับพิมพ์ 4x6
+                const printLayout = document.getElementById('print-layout');
+                const printPage = printLayout.querySelector('.print-page-4x6');
+                printPage.innerHTML = ''; // ล้างของเดิม
+
+                // 2. จัดเรียงรูปภาพ 6 รูป (2 แถว x 3 คอลัมน์)
+                const photosToPrint = [...galleryItems];
+                while (photosToPrint.length < 6) {
+                    // เติมรูปซ้ำหากไม่ถึง 6 รูป
+                    if (photosToPrint.length > 0) {
+                       photosToPrint.push(photosToPrint[photosToPrint.length % galleryItems.length]);
+                    } else {
+                       break; // ไม่ควรเกิดหากตรวจสอบ galleryItems.length แล้ว
+                    }
+                }
+                
+                // ใช้แค่ 6 รูปแรก
+                photosToPrint.slice(0, 6).forEach((dataUrl, index) => {
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.classList.add('print-item-4x6');
+                    img.alt = `Print Photo ${index + 1}`;
+                    printPage.appendChild(img);
+                });
+
+                // 3. สั่งพิมพ์
+                window.print();
+                
+                // 4. ล้าง Layout หลังพิมพ์เสร็จ
+                setTimeout(() => {
+                    printPage.innerHTML = '';
+                }, 500);
+            });
+
+            // เริ่มต้นสถานะปุ่ม
+            updateActionButtons(); 
+        });
+    </script>
+</body>
+</html>
