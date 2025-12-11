@@ -1,644 +1,211 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sena's Minimal Photobooth</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <style>
-        /* --- CSS (Style) --- */
-        
-        :root {
-            --color-primary: #FFB3C6; /* Pastel Pink */
-            --color-secondary: #BEE3DB; /* Pastel Mint */
-            --color-background: #F8F9FA; /* Off-White/Cream */
-            --color-text: #495057; 
-            --color-accent: #FFE5D9; /* Peach/Cream Accent */
-            --color-dark-text: #343a40;
-            --border-radius-lg: 15px;
-            --border-radius-sm: 8px;
-        }
+<meta charset="UTF-8">
+<title>Sena125 Photobooth</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-        body {
-            font-family: 'Roboto', sans-serif; 
-            background-color: var(--color-background);
-            color: var(--color-text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #ffeaf6;
+        font-family: "Arial", sans-serif;
+        text-align: center;
+    }
 
-        .container {
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-            background-color: #FFFFFF;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        }
+    h1 {
+        color: #ff76c6;
+        margin-top: 20px;
+        font-size: 32px;
+        font-weight: bold;
+    }
 
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+    video {
+        width: 92%;
+        max-width: 460px;
+        margin-top: 10px;
+        border-radius: 18px;
+        border: 5px solid #ff9fdc;
+    }
 
-        header h1 {
-            color: var(--color-dark-text);
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
+    #countdown {
+        font-size: 85px;
+        font-weight: bold;
+        height: 120px;
+        margin-top: 10px;
+        color: #ff3c92;
+    }
 
-        /* CAMERA AREA & LIVE PREVIEW */
-        .camera-area {
-            position: relative;
-            width: 100%;
-            padding-top: 133.33%; /* 3:4 Aspect Ratio */
-            border-radius: var(--border-radius-lg);
-            overflow: hidden;
-            background-color: var(--color-accent);
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
+    #startBtn {
+        background: #ff69b4;
+        color: white;
+        padding: 14px 36px;
+        font-size: 22px;
+        border: none;
+        border-radius: 14px;
+        margin-top: 12px;
+    }
 
-        #webcam-preview, #photo-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1); /* Mirror effect */
-        }
+    #downloadBtn {
+        background: #ff8bcf;
+        color: white;
+        padding: 14px 36px;
+        font-size: 22px;
+        border: none;
+        border-radius: 14px;
+        margin-top: 25px;
+        display: none;
+    }
 
-        .loading-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--color-dark-text);
-            font-size: 1.2em;
-            font-weight: 500;
-            text-align: center;
-        }
-
-        /* BUTTONS (Cute & Rounded) */
-        .cute-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 50px; 
-            font-family: 'Roboto', sans-serif;
-            font-size: 1em;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin: 5px;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .primary-btn {
-            background-color: var(--color-primary);
-            color: #FFFFFF;
-        }
-
-        .secondary-btn {
-            background-color: var(--color-accent);
-            color: var(--color-dark-text);
-        }
-
-        .cute-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        /* FRAME SELECTION */
-        .frame-selection {
-            text-align: center;
-            margin-bottom: 25px;
-            padding: 15px;
-            background-color: var(--color-accent);
-            border-radius: var(--border-radius-lg);
-        }
-
-        .frame-options {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-
-        .frame-select-btn {
-            padding: 8px 15px;
-            margin: 4px;
-            border: 2px solid transparent;
-            background-color: #FFFFFF;
-            color: var(--color-text);
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-
-        .frame-select-btn.active {
-            border-color: var(--color-primary);
-            background-color: var(--color-primary);
-            color: #FFFFFF;
-            box-shadow: 0 0 0 3px var(--color-accent);
-        }
-
-        /* FRAME OVERLAYS */
-        .frame-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        
-        /* Minimal Frame 1: Simple Color Border */
-        .frame-overlay[data-frame="frame1"] {
-            border: 15px solid var(--color-primary);
-            box-sizing: border-box;
-        }
-        
-        /* Minimal Frame 3: Polaroid Look (White border only) */
-        .frame-overlay[data-frame="frame3"] {
-            border: 10px solid #FFFFFF;
-            border-bottom: 70px solid #FFFFFF;
-            box-sizing: border-box;
-            outline: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .frame-text {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-weight: 500;
-            color: var(--color-dark-text);
-            z-index: 10;
-        }
-        /* Adjust text position for Polaroid frame */
-        .frame-overlay[data-frame="frame3"] .frame-text {
-            bottom: 10px;
-            font-size: 1.1em;
-        }
-        /* Default text position */
-        .frame-overlay[data-frame]:not([data-frame="frame3"]) .frame-text {
-             bottom: 10px;
-             font-size: 1em;
-             padding: 2px 8px;
-             background-color: #FFFFFF;
-             border-radius: var(--border-radius-sm);
-        }
-
-
-        /* GALLERY STYLES */
-        .gallery h3 {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .photo-gallery {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            padding: 10px;
-            min-height: 100px;
-            border: 1px dashed var(--color-accent);
-            border-radius: var(--border-radius-lg);
-            margin-bottom: 20px;
-        }
-
-        .gallery-item {
-            position: relative;
-            padding-top: 133.33%; /* 3:4 aspect ratio */
-            background-color: var(--color-accent);
-            border-radius: var(--border-radius-sm);
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .gallery-item img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        /* PRINT STYLES (4x6 Layout) */
-        @media print {
-            body > *:not(#print-layout) {
-                display: none !important;
-            }
-
-            body {
-                margin: 0;
-                padding: 0;
-                background: none;
-            }
-
-            #print-layout {
-                display: block !important;
-                width: 100%;
-                height: 100%;
-            }
-
-            .print-page-4x6 {
-                /* Set container size for 4x6 print */
-                width: 6in;
-                height: 4in;
-                margin: auto; 
-                display: grid;
-                grid-template-columns: repeat(3, 1fr); /* 3 columns */
-                grid-template-rows: repeat(2, 1fr); /* 2 rows */
-                gap: 0;
-                box-sizing: border-box;
-                overflow: hidden;
-                page-break-after: always;
-                
-                /* Landscape rotation logic (for 4x6) */
-                transform: rotate(90deg);
-                transform-origin: top left;
-                width: 4in; 
-                height: 6in;
-                position: absolute;
-                top: 0;
-                left: 6in;
-            }
-
-            .print-item-4x6 {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-        }
-
-        #print-layout {
-            display: none;
-        }
-    </style>
+    #resultStrip img {
+        width: 330px;
+        margin-top: 20px;
+        border-radius: 12px;
+        border: 5px solid #ffa8d8;
+    }
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>Sena's Minimal Booth 🌸</h1>
-            <p>Cute & Clean Photo Experience</p>
-        </header>
+<h1>📸 Sena125 Photobooth 🎀</h1>
 
-        <div class="camera-area">
-            <video id="webcam-preview" autoplay playsinline></video>
-            <canvas id="photo-canvas" style="display:none;"></canvas>
-            
-            <div id="frame-overlay" class="frame-overlay" data-frame="none"></div>
-            
-            <div id="loading-message" class="loading-message">
-                Tap to Start Camera 📷
-            </div>
-        </div>
+<video id="camera" autoplay playsinline></video>
+<div id="countdown"></div>
 
-        <div class="controls">
-            <button id="capture-btn" class="cute-btn primary-btn" disabled>
-                <i class="fas fa-camera"></i> Capture
-            </button>
+<button id="startBtn">เริ่มถ่ายโฟโต้บูธ 💖</button>
 
-            <button id="toggle-camera-btn" class="cute-btn secondary-btn" style="display:none;">
-                <i class="fas fa-sync-alt"></i> Toggle Camera
-            </button>
-        </div>
+<canvas id="photoCanvas" style="display: none;"></canvas>
+<canvas id="stripCanvas" style="display: none;"></canvas>
 
-        <div class="frame-selection">
-            <h3>✨ Select a Frame</h3>
-            <div class="frame-options">
-                <button class="frame-select-btn active" data-frame="none">
-                    <i class="fas fa-times"></i> No Frame
-                </button>
-                <button class="frame-select-btn" data-frame="frame1">
-                    <i class="fas fa-heart"></i> Pastel Border
-                </button>
-                <button class="frame-select-btn" data-frame="frame2">
-                    <i class="fas fa-star"></i> Simple Clean
-                </button>
-                <button class="frame-select-btn" data-frame="frame3">
-                    <i class="fas fa-gem"></i> Polaroid
-                </button>
-            </div>
-        </div>
+<div id="resultStrip"></div>
 
-        <div class="gallery">
-            <h3>🖼️ Captured Photos (Max 6)</h3>
-            <div id="photo-gallery" class="photo-gallery">
-                </div>
-            
-            <div class="action-buttons">
-                <button id="save-all-btn" class="cute-btn primary-btn" disabled>
-                    <i class="fas fa-download"></i> Download All
-                </button>
-                <button id="print-btn" class="cute-btn secondary-btn" disabled>
-                    <i class="fas fa-print"></i> Print (4x6)
-                </button>
-                <button id="clear-gallery-btn" class="cute-btn secondary-btn">
-                    <i class="fas fa-trash-alt"></i> Clear
-                </button>
-            </div>
-        </div>
-    </div>
+<button id="downloadBtn">ดาวน์โหลดโฟโต้สตริป 🎀</button>
 
-    <div id="print-layout" class="print-layout">
-        <div class="print-page-4x6"></div>
-    </div>
+<!-- เสียงนับถอยหลัง -->
+<audio id="beepSound">
+    <source src="data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAA" type="audio/mp3">
+</audio>
 
-    <script>
-        // --- JAVASCRIPT (Logic) ---
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            const video = document.getElementById('webcam-preview');
-            const canvas = document.getElementById('photo-canvas');
-            const captureBtn = document.getElementById('capture-btn');
-            const toggleCameraBtn = document.getElementById('toggle-camera-btn');
-            const loadingMessage = document.getElementById('loading-message');
-            const frameOptions = document.querySelectorAll('.frame-select-btn');
-            const frameOverlay = document.getElementById('frame-overlay');
-            const photoGallery = document.getElementById('photo-gallery');
-            const saveAllBtn = document.getElementById('save-all-btn');
-            const printBtn = document.getElementById('print-btn');
-            const clearGalleryBtn = document.getElementById('clear-gallery-btn');
-            const galleryItems = []; 
-            let currentFrame = 'none';
-            let stream = null;
-            let cameraFacingMode = 'user'; 
+<!-- เสียงแชะ -->
+<audio id="shutterSound">
+    <source src="data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAA" type="audio/mp3">
+</audio>
 
-            // --- 1. Camera Management ---
+<script>
+    const video = document.getElementById("camera");
+    const startBtn = document.getElementById("startBtn");
+    const countdownEl = document.getElementById("countdown");
+    const photoCanvas = document.getElementById("photoCanvas");
+    const stripCanvas = document.getElementById("stripCanvas");
+    const resultStripDiv = document.getElementById("resultStrip");
+    const downloadBtn = document.getElementById("downloadBtn");
 
-            async function startCamera(facingMode) {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
+    const beep = document.getElementById("beepSound");
+    const shutter = document.getElementById("shutterSound");
 
-                try {
-                    loadingMessage.textContent = 'Loading Camera... ⏳';
-                    
-                    const constraints = {
-                        video: {
-                            facingMode: facingMode,
-                            width: { ideal: 640 },
-                            height: { ideal: 480 }
-                        }
-                    };
-
-                    stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    video.srcObject = stream;
-                    video.onloadedmetadata = () => {
-                        video.play();
-                        captureBtn.disabled = false;
-                        loadingMessage.style.display = 'none';
-                        
-                        // Check for multiple cameras
-                        if (navigator.mediaDevices.enumerateDevices) {
-                            navigator.mediaDevices.enumerateDevices().then(devices => {
-                                const videoDevices = devices.filter(d => d.kind === 'videoinput');
-                                if (videoDevices.length > 1) {
-                                    toggleCameraBtn.style.display = 'inline-block';
-                                } else {
-                                    toggleCameraBtn.style.display = 'none';
-                                }
-                            });
-                        }
-                    };
-                    
-                } catch (err) {
-                    console.error("Error accessing the camera: ", err);
-                    loadingMessage.textContent = 'Cannot Access Camera ❌ Check Permissions.';
-                    captureBtn.disabled = true;
-                }
-            }
-
-            toggleCameraBtn.addEventListener('click', () => {
-                cameraFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
-                startCamera(cameraFacingMode);
-            });
-
-            // Start camera on tap (required for mobile/iPad)
-            loadingMessage.addEventListener('click', () => {
-                startCamera(cameraFacingMode);
-            });
-
-
-            // --- 2. Capture and Frame Drawing ---
-
-            function drawImageWithFrame() {
-                if (video.readyState !== 4) return;
-
-                const width = video.videoWidth;
-                const height = video.videoHeight;
-                
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                
-                // 1. Draw Image (Mirrored)
-                ctx.save();
-                ctx.scale(-1, 1);
-                ctx.drawImage(video, 0, 0, -width, height);
-                ctx.restore();
-
-                // 2. Draw Frame (Properties are set to visually match CSS frames)
-                const frameData = getFrameProperties(currentFrame, width, height);
-
-                if (frameData.borderSize > 0) {
-                    ctx.fillStyle = frameData.borderColor;
-                    // Top/Bottom
-                    ctx.fillRect(0, 0, width, frameData.borderSize); 
-                    ctx.fillRect(0, height - frameData.borderSize, width, frameData.borderSize);
-                    // Left/Right
-                    ctx.fillRect(0, frameData.borderSize, frameData.borderSize, height - frameData.borderSize * 2);
-                    ctx.fillRect(width - frameData.borderSize, frameData.borderSize, frameData.borderSize, height - frameData.borderSize * 2);
-                }
-                
-                // 3. Draw "sena125" Text
-                const text = "sena125";
-                ctx.font = `${Math.round(height * 0.05)}px 'Roboto', sans-serif`; 
-                ctx.fillStyle = '#495057';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom';
-                
-                // Position based on frame type
-                ctx.fillText(text, width / 2, height - (frameData.textOffset || 15)); 
-
-                return canvas.toDataURL('image/jpeg', 0.9);
-            }
-
-            function getFrameProperties(frameId, width, height) {
-                let borderSize = 0;
-                let borderColor = '#FFFFFF';
-                let textOffset = 15; 
-
-                switch (frameId) {
-                    case 'frame1': // Pastel Border
-                        borderSize = Math.round(width * 0.03); 
-                        borderColor = '#FFB3C6'; 
-                        break;
-                    case 'frame2': // Simple Clean (White border + text)
-                        borderSize = Math.round(width * 0.03);
-                        borderColor = '#FFFFFF'; 
-                        break;
-                    case 'frame3': // Polaroid (Thick bottom border)
-                        borderSize = Math.round(width * 0.02);
-                        borderColor = '#FFFFFF';
-                        textOffset = Math.round(height * 0.1); // Move text lower
-                        break;
-                    case 'none':
-                    default:
-                        borderSize = 0;
-                        break;
-                }
-                return { borderSize, borderColor, textOffset };
-            }
-
-            captureBtn.addEventListener('click', () => {
-                const photoDataUrl = drawImageWithFrame();
-                if (photoDataUrl) {
-                    addPhotoToGallery(photoDataUrl);
-                }
-            });
-
-            frameOptions.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    frameOptions.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentFrame = btn.getAttribute('data-frame');
-                    frameOverlay.setAttribute('data-frame', currentFrame);
-                    
-                    // Add/Remove sena125 text overlay
-                    let textElem = frameOverlay.querySelector('.frame-text');
-                    if (currentFrame !== 'none') {
-                        if (!textElem) {
-                            textElem = document.createElement('div');
-                            textElem.classList.add('frame-text');
-                            frameOverlay.appendChild(textElem);
-                        }
-                        textElem.textContent = 'sena125';
-                        if (currentFrame === 'frame2') {
-                            // Frame 2 is a plain white border, keep text simple
-                            textElem.style.bottom = '10px';
-                        }
-                    } else {
-                        if (textElem) {
-                            frameOverlay.removeChild(textElem);
-                        }
-                    }
-                });
-            });
-
-
-            // --- 3. Gallery & Actions ---
-
-            function addPhotoToGallery(dataUrl) {
-                if (galleryItems.length >= 6) {
-                    alert('Maximum 6 photos reached. Please clear the gallery or download/print.');
-                    return;
-                }
-
-                galleryItems.push(dataUrl);
-                
-                const item = document.createElement('div');
-                item.classList.add('gallery-item');
-                const img = document.createElement('img');
-                img.src = dataUrl;
-                item.appendChild(img);
-                photoGallery.appendChild(item);
-
-                updateActionButtons();
-            }
-
-            function updateActionButtons() {
-                const hasPhotos = galleryItems.length > 0;
-                saveAllBtn.disabled = !hasPhotos;
-                printBtn.disabled = !hasPhotos;
-            }
-
-            clearGalleryBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to clear all photos?')) {
-                    galleryItems.length = 0; 
-                    photoGallery.innerHTML = ''; 
-                    updateActionButtons();
-                }
-            });
-
-            saveAllBtn.addEventListener('click', () => {
-                if (galleryItems.length === 0) return;
-                
-                alert(`Starting download of ${galleryItems.length} photos...`);
-                
-                galleryItems.forEach((dataUrl, index) => {
-                    const link = document.createElement('a');
-                    link.href = dataUrl;
-                    link.download = `sena_photobooth_${index + 1}_${Date.now()}.jpeg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
-            });
-
-
-            // --- 4. Print (4x6) ---
-
-            printBtn.addEventListener('click', () => {
-                if (galleryItems.length === 0) {
-                    alert('Please capture photos before printing.');
-                    return;
-                }
-                
-                const printLayout = document.getElementById('print-layout');
-                const printPage = printLayout.querySelector('.print-page-4x6');
-                printPage.innerHTML = ''; 
-
-                const photosToPrint = [...galleryItems];
-                while (photosToPrint.length < 6) {
-                    if (photosToPrint.length > 0) {
-                       // Fill remaining slots by repeating photos
-                       photosToPrint.push(photosToPrint[photosToPrint.length % galleryItems.length]);
-                    } else {
-                       break; 
-                    }
-                }
-                
-                photosToPrint.slice(0, 6).forEach((dataUrl, index) => {
-                    const img = document.createElement('img');
-                    img.src = dataUrl;
-                    img.classList.add('print-item-4x6');
-                    printPage.appendChild(img);
-                });
-
-                window.print();
-                
-                setTimeout(() => {
-                    printPage.innerHTML = '';
-                }, 500);
-            });
-
-            updateActionButtons(); 
+    // เปิดกล้อง
+    (async function() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+            audio: false
         });
-    </script>
+        video.srcObject = stream;
+    })();
+
+    // นับถอยหลัง
+    async function countdown(sec) {
+        for (let i = sec; i > 0; i--) {
+            countdownEl.textContent = i;
+            beep.play();
+            await new Promise(res => setTimeout(res, 1000));
+        }
+        countdownEl.textContent = "";
+    }
+
+    // ถ่ายรูป
+    async function takePhoto() {
+        const ctx = photoCanvas.getContext("2d");
+        photoCanvas.width = video.videoWidth;
+        photoCanvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        shutter.play();
+        return photoCanvas.toDataURL("image/png");
+    }
+
+    startBtn.onclick = async () => {
+        startBtn.style.display = "none";
+        resultStripDiv.innerHTML = "";
+        downloadBtn.style.display = "none";
+
+        const photos = [];
+
+        // ถ่าย 4 รูป
+        for (let i = 0; i < 4; i++) {
+            await countdown(3);
+            let shot = await takePhoto();
+            photos.push(shot);
+        }
+
+        createStrip(photos);
+    };
+
+    // รวมโฟโต้สตริป
+    function createStrip(photos) {
+        const W = 650;
+        const H = 1650;
+
+        stripCanvas.width = W;
+        stripCanvas.height = H;
+
+        const ctx = stripCanvas.getContext("2d");
+
+        // พื้นหลังโทนหวาน
+        ctx.fillStyle = "#ffd6f0";
+        ctx.fillRect(0, 0, W, H);
+
+        // กรอบใหญ่
+        ctx.fillStyle = "#ff8bcf";
+        ctx.fillRect(40, 40, W - 80, H - 80);
+
+        const imgW = W - 140;
+        const imgH = 300;
+
+        let top = 60;
+
+        photos.forEach((src) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+                ctx.drawImage(img, 70, top, imgW, imgH);
+            };
+            top += imgH + 25;
+        });
+
+        // ข้อความด้านล่าง
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 52px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("sena125", W / 2, H - 55);
+
+        setTimeout(() => {
+            const finalImg = stripCanvas.toDataURL("image/png");
+
+            const imgElement = document.createElement("img");
+            imgElement.src = finalImg;
+            resultStripDiv.appendChild(imgElement);
+
+            downloadBtn.style.display = "block";
+            downloadBtn.onclick = () => {
+                const a = document.createElement("a");
+                a.href = finalImg;
+                a.download = "sena125-photostrip.png";
+                a.click();
+            };
+        }, 500);
+    }
+</script>
+
 </body>
 </html>
